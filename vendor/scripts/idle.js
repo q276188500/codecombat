@@ -24,7 +24,6 @@
 
     function Idle(options) {
       var activeMethod, activity;
-
       if (options) {
         this.awayTimeout = parseInt(options.awayTimeout, 10);
         this.onAway = options.onAway;
@@ -36,21 +35,14 @@
       activeMethod = function() {
         return activity.onActive();
       };
-      window.onclick = activeMethod;
-      window.onmousemove = activeMethod;
-      window.onmouseenter = activeMethod;
-      window.onkeydown = activeMethod;
-      window.onscroll = activeMethod;
-      window.onmousewheel = activeMethod;
-      document.addEventListener("visibilitychange", (function() {
-        return activity.handleVisibilityChange();
-      }), false);
-      document.addEventListener("webkitvisibilitychange", (function() {
-        return activity.handleVisibilityChange();
-      }), false);
-      document.addEventListener("msvisibilitychange", (function() {
-        return activity.handleVisibilityChange();
-      }), false);
+      window.addEventListener('click', activeMethod, { passive: true });
+      window.addEventListener('mousemove', activeMethod, { passive: true });
+      window.addEventListener('mouseenter', activeMethod, { passive: true });
+      window.addEventListener('keydown', activeMethod, { passive: true });
+      window.addEventListener('scroll', activeMethod, { passive: true });
+      window.addEventListener('mousewheel', activeMethod, { passive: true });
+      window.addEventListener('touchmove', activeMethod, { passive: true });
+      window.addEventListener('touchstart', activeMethod, { passive: true });
     }
 
     Idle.prototype.onActive = function() {
@@ -67,7 +59,14 @@
 
     Idle.prototype.start = function() {
       var activity;
-
+      if (!this.listener) {
+        this.listener = (function() {
+          return activity.handleVisibilityChange();
+        });
+        document.addEventListener("visibilitychange", this.listener, false);
+        document.addEventListener("webkitvisibilitychange", this.listener, false);
+        document.addEventListener("msvisibilitychange", this.listener, false);
+      }
       this.awayTimestamp = new Date().getTime() + this.awayTimeout;
       if (this.awayTimer !== null) {
         clearTimeout(this.awayTimer);
@@ -76,6 +75,19 @@
       this.awayTimer = setTimeout((function() {
         return activity.checkAway();
       }), this.awayTimeout + 100);
+      return this;
+    };
+
+    Idle.prototype.stop = function() {
+      if (this.awayTimer !== null) {
+        clearTimeout(this.awayTimer);
+      }
+      if (this.listener !== null) {
+        document.removeEventListener("visibilitychange", this.listener);
+        document.removeEventListener("webkitvisibilitychange", this.listener);
+        document.removeEventListener("msvisibilitychange", this.listener);
+        this.listener = null;
+      }
       return this;
     };
 

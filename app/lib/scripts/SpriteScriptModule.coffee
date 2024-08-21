@@ -1,6 +1,6 @@
 ScriptModule = require './ScriptModule'
-{me} = require 'lib/auth'
-utils = require 'lib/utils'
+{me} = require 'core/auth'
+utils = require 'core/utils'
 
 module.exports = class SpritesScriptModule extends ScriptModule
   @neededFor: (noteGroup) ->
@@ -20,7 +20,7 @@ module.exports = class SpritesScriptModule extends ScriptModule
   spriteMoveNote: (sprite, instant=false) ->
     duration = if instant then 0 else sprite.move.duration
     note =
-      channel: 'level-sprite-move'
+      channel: 'sprite:move'
       event:
         pos: sprite.move.target
         duration: duration
@@ -39,13 +39,27 @@ module.exports = class SpritesScriptModule extends ScriptModule
       response.text = utils.i18n response, 'text'
     text = utils.i18n sprite.say, 'text'
     blurb = utils.i18n sprite.say, 'blurb'
-    sound = sprite.say.sound # TODO support sound i18n
+    sound = utils.i18n sprite.say, 'sound'
+
+    # Determine whether to request TTS
+    lang = me.get('preferredLanguage', true)
+    wantsEnglish = lang.split('-')[0] is 'en'
+    textIsLocalized = text isnt sprite.say.text
+    soundIsLocalized = sound isnt sprite.say.sound
+    hasSound = sound and (soundIsLocalized or wantsEnglish)
+    if text and not hasSound and utils.isCodeCombat
+      # Ozaria plays these kinds of things a different way, when constructing tutorial messages
+      plainText = utils.markdownToPlainText text
+      textLanguage = if textIsLocalized or lang is 'en-GB' then lang else 'en-US'
+      ttsPath = "text-to-speech/#{textLanguage}/#{encodeURIComponent(plainText)}"
+      sound = mp3: ttsPath + '.mp3', ogg: ttsPath + '.ogg'
+
     note =
-      channel: 'level-sprite-dialogue'
+      channel: 'level:sprite-dialogue'
       event:
         message: text
         blurb: blurb
-        mood: sprite.say.mood or "explain"
+        mood: sprite.say.mood or 'explain'
         responses: responses
         spriteID: sprite.id
         sound: sound
@@ -54,7 +68,7 @@ module.exports = class SpritesScriptModule extends ScriptModule
 
   spriteSelectNote: (sprite) ->
     note =
-      channel: 'level-select-sprite'
+      channel: 'level:select-sprite'
       event:
         thangID: if sprite.select then sprite.id else null
     return note
@@ -64,7 +78,7 @@ module.exports = class SpritesScriptModule extends ScriptModule
     for sprite in @noteGroup.sprites or []
       notes[sprite.id] ?= {}
       notes[sprite.id]['move'] = (@spriteMoveNote sprite, true) if sprite.move?
-      notes[sprite.id]['say'] = { channel: 'level-sprite-clear-dialogue' } if sprite.say?
+      notes[sprite.id]['say'] = { channel: 'level:sprite-clear-dialogue' } if sprite.say?
     noteArray = []
     for spriteID of notes
       for type of notes[spriteID]

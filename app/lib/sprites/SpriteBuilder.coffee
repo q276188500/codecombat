@@ -1,9 +1,10 @@
-{hexToHSL, hslToHex} = require 'lib/utils'
+{hexToHSL, hslToHex} = require 'core/utils'
+createjs = require 'lib/createjs-parts'
 
 module.exports = class SpriteBuilder
   constructor: (@thangType, @options) ->
     @options ?= {}
-    raw = @thangType.get('raw')
+    raw = @thangType.get('raw') or {}
     @shapeStore = raw.shapes
     @containerStore = raw.containers
     @animationStore = raw.animations
@@ -11,10 +12,10 @@ module.exports = class SpriteBuilder
 
   setOptions: (@options) ->
 
-  buildMovieClip: (animationName, movieClipArgs...) ->
+  buildMovieClip: (animationName, mode, startPosition, loops, labels) ->
     animData = @animationStore[animationName]
     unless animData
-      console.error "couldn't find animData from", @animationStore, "for", animationName
+      console.error 'couldn\'t find animData from', @animationStore, 'for', animationName
       return null
     locals = {}
     _.extend locals, @buildMovieClipShapes(animData.shapes)
@@ -22,21 +23,23 @@ module.exports = class SpriteBuilder
     _.extend locals, @buildMovieClipAnimations(animData.animations)
     _.extend locals, @buildMovieClipGraphics(animData.graphics)
     anim = new createjs.MovieClip()
-    movieClipArgs ?= []
-    labels = {}
-    labels[animationName] = 0
-    anim.initialize(
-      movieClipArgs[0] ? createjs.MovieClip.INDEPENDENT, # mode
-      movieClipArgs[1] ? 0, # start position
-      movieClipArgs[2] ? true, # loops
-      labels)
+    if not labels
+      labels = {}
+      labels[animationName] = 0
+    anim.initialize(mode ? createjs.MovieClip.INDEPENDENT, startPosition ? 0, loops ? true, labels)
     for tweenData in animData.tweens
       tween = createjs.Tween
+      stopped = false
       for func in tweenData
         args = _.cloneDeep(func.a)
         @dereferenceArgs(args, locals)
-        tween = tween[func.n](args...)
-      anim.timeline.addTween(tween)
+        if tween[func.n]
+          tween = tween[func.n](args...)
+        else
+          # If we, say, skipped a shadow get(), then the wait() may not be present
+          stopped = true
+          break
+      anim.timeline.addTween(tween) unless stopped
 
     anim.nominalBounds = new createjs.Rectangle(animData.bounds...)
     if animData.frameBounds
@@ -81,8 +84,9 @@ module.exports = class SpriteBuilder
   buildMovieClipAnimations: (localAnimations) ->
     map = {}
     for localAnimation in localAnimations
-      animation = @buildMovieClip(localAnimation.gn, localAnimation.a)
+      animation = @buildMovieClip(localAnimation.gn, localAnimation.a...)
       animation.setTransform(localAnimation.t...)
+      animation._off = true if localAnimation.off
       map[localAnimation.bn] = animation
     map
 
@@ -100,6 +104,8 @@ module.exports = class SpriteBuilder
       shape.graphics.lf shapeData.lf...
     else if shapeData.fc?
       shape.graphics.f @colorMap[shapeKey] or shapeData.fc
+    else if shapeData.rf?
+      shape.graphics.rf shapeData.rf...
     if shapeData.ls?
       shape.graphics.ls shapeData.ls...
     else if shapeData.sc?
@@ -111,7 +117,7 @@ module.exports = class SpriteBuilder
     shape
 
   buildContainerFromStore: (containerKey) ->
-    console.error "Yo we don't have no", containerKey unless containerKey
+    console.error 'Yo we don\'t have no containerKey' unless containerKey
     contData = @containerStore[containerKey]
     cont = new createjs.Container()
     cont.initialize()
@@ -119,23 +125,56 @@ module.exports = class SpriteBuilder
       if _.isString(childData)
         child = @buildShapeFromStore(childData)
       else
+        continue if not childData.gn
         child = @buildContainerFromStore(childData.gn)
         child.setTransform(childData.t...)
       cont.addChild(child)
     cont.bounds = new createjs.Rectangle(contData.b...)
     cont
 
+  # Builds the spritesheet using the texture atlas images for each animation/action and updates its reference in the movieClip file
+  buildSpriteSheetFromTextureAtlas: (actionNames) ->
+    for action in actionNames
+      spriteData = @thangType.getRasterAtlasSpriteData(action)
+
+      unless spriteData and spriteData.ssMetadata and spriteData.ss
+        console.warn "Sprite data for #{action} does not contain the required data to build a spritesheet! ", spriteData
+        continue
+
+      try
+        # spriteData holds a reference to the spritesheet in the adobe animate's movieClip file (ss)
+        for metaData in spriteData?.ssMetadata
+          # builds the spritesheets everytime an action is rendered
+          # TODO build new spritesheet only if there are changes in metaData.images / metaData.frames
+          spriteData.ss?[metaData.name] = new createjs.SpriteSheet( { 'images': metaData.images, 'frames': metaData.frames })
+      catch e
+        console.error 'Error in creating spritesheet', e
+
   buildColorMaps: ->
     @colorMap = {}
     colorGroups = @thangType.get('colorGroups')
     return if _.isEmpty colorGroups
+    return unless _.size @shapeStore  # We don't have the shapes loaded because we are doing a prerendered spritesheet approach
     colorConfig = @options.colorConfig
-#    colorConfig ?= {team: {hue:0.4, saturation: -0.5, lightness: -0.5}} # test config
+    #    colorConfig ?= {team: {hue:0.4, saturation: -0.5, lightness: -0.5}} # test config
     return if not colorConfig
 
     for group, config of colorConfig
       continue unless colorGroups[group] # color group not found...
-      @buildColorMapForGroup(colorGroups[group], config)
+      if @thangType.get('ozaria')
+        @buildOzariaColorMapForGroup(colorGroups[group], config)
+      else
+        @buildColorMapForGroup(colorGroups[group], config)
+
+  # Simpler Ozaria color mapper.
+  # Instead of color shifting we apply the color directly.
+  buildOzariaColorMapForGroup: (shapes, config) ->
+    return unless shapes.length
+    for shapeKey in shapes
+      shape = @shapeStore[shapeKey]
+      continue if not shape?.fc?
+      # Store the color we'd like the shape to be rendered with.
+      @colorMap[shapeKey] = hslToHex([config.hue, config.saturation, config.lightness])
 
   buildColorMapForGroup: (shapes, config) ->
     return unless shapes.length
@@ -149,7 +188,7 @@ module.exports = class SpriteBuilder
     colors = {}
     for shapeKey in shapes
       shape = @shapeStore[shapeKey]
-      continue if (not shape.fc?) or colors[shape.fc]
+      continue if (not shape?.fc?) or colors[shape.fc]
       hsl = hexToHSL(shape.fc)
       colors[shape.fc] = hsl
     colors
@@ -179,8 +218,7 @@ module.exports = class SpriteBuilder
   applyColorMap: (shapes, colors) ->
     for shapeKey in shapes
       shape = @shapeStore[shapeKey]
-      continue if (not shape.fc?) or not(colors[shape.fc])
+      continue if (not shape?.fc?) or not(colors[shape.fc])
       @colorMap[shapeKey] = hslToHex(colors[shape.fc])
-
 
 sum = (nums) -> _.reduce(nums, (s, num) -> s + num)

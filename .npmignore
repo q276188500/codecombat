@@ -10,14 +10,14 @@ karma.conf.js
 .gitignore
 
 # Don't include Brunch input
-test
-vendor
+# test
+# vendor
 
 # Only include some of app
-app/assets
-app/styles
-app/templates
-app/views
+# app/assets
+# app/styles
+# app/templates
+# app/views
 #!app/models  # keep
 #!app/validators  # keep
 #!app/lib/world  # keep
@@ -53,8 +53,15 @@ Thumbs.db
 *.sublime-project
 *.sublime-workspace
 
+# IntelliJ/WebStorm
+*.iml
+
 # NPM packages folder.
 node_modules/
+bower_components/
+
+# Vagrant
+.vagrant/
 
 # Some other random stuff
 always-ignore extensions
@@ -65,6 +72,7 @@ always-ignore extensions
 *.rej
 *.vi
 *.sass-cache
+.zedstate
 
 # OS or Editor folders
 .cache
@@ -85,10 +93,25 @@ tmp/
 dump.rdb
 
 # Mongo
-mongo/
-bin/node/
-bin/mongo/
-
+# mongo/
+# bin/node/
+# bin/mongo/
 
 # Karma coverage
 coverage/
+
+temp/
+
+# local settings
+login.coffee
+Dockerfile
+
+# debugging
+*.heapsnapshot
+
+npm-debug.log*
+
+temp/
+
+# Created by git LFS
+.gitattributes

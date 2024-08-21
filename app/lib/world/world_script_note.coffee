@@ -2,16 +2,16 @@
 {scriptMatchesEventPrereqs} = require './script_event_prereqs'
 
 module.exports = class WorldScriptNote
-  @className: "WorldScriptNote"
+  @className: 'WorldScriptNote'
   constructor: (script, @event, world) ->
     return unless script?
     @invalid = true
-    return unless scriptMatchesEventPrereqs(script, event)
+    return unless scriptMatchesEventPrereqs(script, @event)
     # Could add the scriptPrereqsSatisfied or seen/repeats stuff if needed
     @invalid = false
     @channel = script.channel
     @event ?= {}
-    @event.replacedNoteChain = script.noteChain
+    @event.replacedNoteChain = script.noteChain if script.noteChain
 
   serialize: ->
     o = {channel: @channel, event: {}}

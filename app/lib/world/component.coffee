@@ -1,7 +1,9 @@
+utils = require 'core/utils'
+
 componentKeywords = ['attach', 'constructor', 'validateArguments', 'toString', 'isComponent']  # Array is faster than object
 
 module.exports = class Component
-  @className: "Component"
+  @className: 'Component'
   isComponent: true
   constructor: (config) ->
     for key, value of config
@@ -9,8 +11,10 @@ module.exports = class Component
 
   attach: (thang) ->
     # Optimize; this is much of the World constructor time
-    for key, value of @ when key not in componentKeywords and key[0] isnt "_"
+    keys = (Object.getOwnPropertyNames(@.__proto__) or []).concat(Object.getOwnPropertyNames(@))
+    for key in keys when key not in componentKeywords and key[0] isnt '_'
       oldValue = thang[key]
+      value = @[key]
       if typeof oldValue is 'function'
         thang.appendMethod key, value
       else
@@ -18,6 +22,19 @@ module.exports = class Component
 
   validateArguments:
     additionalProperties: false
+
+  getCodeContext: (className) ->
+    className ?= @constructor.className
+    return unless @world?.levelComponents?.length
+    levelComponent = _.find @world.levelComponents, name: className
+    return unless levelComponent
+    context = levelComponent?.context or {}
+    language = @world.language or 'en-US'
+
+    localizedContext = utils.i18n(levelComponent, 'context', language)
+    if localizedContext
+      context = _.merge context, localizedContext
+    context
 
   toString: ->
     "<Component: #{@constructor.className}"

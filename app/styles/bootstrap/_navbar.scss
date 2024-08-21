@@ -1,3 +1,4 @@
+@use "sass:math";
 //
 // Navbars
 // --------------------------------------------------
@@ -11,11 +12,11 @@
 .navbar {
   position: relative;
   min-height: $navbar-height; // Ensure a navbar always shows (e.g., without a .navbar-brand in collapsed mode)
-  margin-bottom: $navbar-margin-bottom;  
+  margin-bottom: $navbar-margin-bottom;
 
   border-color: $navbar-default-border;
 
-  @include gradient-vertical($navbar-highlight-bg, $navbar-default-bg);  
+  @include gradient-vertical($navbar-highlight-bg, $navbar-default-bg);
 
   @include box-shadow(0 1px 4px rgba(0,0,0,.065));
 
@@ -34,7 +35,7 @@
 // styling of responsive aspects.
 
 .navbar-header {
-  @include clearfix();  
+  @include clearfix();
 
   @media (min-width: $grid-float-breakpoint) {
     float: left;
@@ -210,9 +211,10 @@
 // the nav the full height of the horizontal nav (above 768px).
 
 .navbar-nav {
-  margin: ($navbar-padding-vertical / 2) (-$navbar-padding-horizontal);
+  margin: math.div($navbar-padding-vertical, 2) (-$navbar-padding-horizontal);
 
-  > li > a {
+  > li > a,
+  > li > button {
     padding-top:    10px;
     padding-bottom: 10px;
     line-height: $line-height-computed;
@@ -229,10 +231,12 @@
       border: 0;
       box-shadow: none;
       > li > a,
+      > li > button,
       .dropdown-header {
         padding: 5px 15px 5px 25px;
       }
-      > li > a {
+      > li > a,
+      > li > button {
         line-height: $line-height-computed;
         &:hover,
         &:focus {
@@ -249,7 +253,8 @@
 
     > li {
       float: left;
-      > a {
+      > a,
+      > button {
         padding-top:    $navbar-padding-vertical;
         padding-bottom: $navbar-padding-vertical;
       }
@@ -398,7 +403,8 @@
   }
 
   .navbar-nav {
-    > li > a {
+    > li > a,
+    > li > button {
       color: $navbar-default-link-color;
 
       &:hover,
@@ -407,7 +413,8 @@
         background-color: $navbar-default-link-hover-bg;
       }
     }
-    > .active > a {
+    > .active > a,
+    > .active > button {
       &,
       &:hover,
       &:focus {
@@ -415,7 +422,8 @@
         background-color: $navbar-default-link-active-bg;
       }
     }
-    > .disabled > a {
+    > .disabled > a,
+    > .disabled > button {
       &,
       &:hover,
       &:focus {
@@ -444,7 +452,8 @@
   // Dropdown menu items
   .navbar-nav {
     // Remove background color from open dropdown
-    > .open > a {
+    > .open > a,
+    > .open > button {
       &,
       &:hover,
       &:focus {
@@ -456,7 +465,8 @@
     @media (max-width: $grid-float-breakpoint-max) {
       // Dropdowns get custom display when collapsed
       .open .dropdown-menu {
-        > li > a {
+        > li > a,
+        > li > button {
           color: $navbar-default-link-color;
           &:hover,
           &:focus {
@@ -464,7 +474,8 @@
             background-color: $navbar-default-link-hover-bg;
           }
         }
-        > .active > a {
+        > .active > a,
+        > .active > button {
           &,
           &:hover,
           &:focus {
@@ -472,7 +483,8 @@
             background-color: $navbar-default-link-active-bg;
           }
         }
-        > .disabled > a {
+        > .disabled > a,
+        > .disabled > button {
           &,
           &:hover,
           &:focus {
@@ -518,7 +530,8 @@
   }
 
   .navbar-nav {
-    > li > a {
+    > li > a,
+    > li > button {
       color: $navbar-inverse-link-color;
 
       &:hover,
@@ -527,7 +540,8 @@
         background-color: $navbar-inverse-link-hover-bg;
       }
     }
-    > .active > a {
+    > .active > a,
+    > .active > button {
       &,
       &:hover,
       &:focus {
@@ -535,7 +549,8 @@
         background-color: $navbar-inverse-link-active-bg;
       }
     }
-    > .disabled > a {
+    > .disabled > a,
+    > .disabled > button {
       &,
       &:hover,
       &:focus {
@@ -564,7 +579,8 @@
 
   // Dropdowns
   .navbar-nav {
-    > .open > a {
+    > .open > a,
+    > .open > button {
       &,
       &:hover,
       &:focus {
@@ -582,7 +598,8 @@
         .divider {
           background-color: $navbar-inverse-border;
         }
-        > li > a {
+        > li > a,
+        > li > button {
           color: $navbar-inverse-link-color;
           &:hover,
           &:focus {
@@ -590,7 +607,8 @@
             background-color: $navbar-inverse-link-hover-bg;
           }
         }
-        > .active > a {
+        > .active > a,
+        > .active > button {
           &,
           &:hover,
           &:focus {
@@ -598,7 +616,8 @@
             background-color: $navbar-inverse-link-active-bg;
           }
         }
-        > .disabled > a {
+        > .disabled > a,
+        > .disabled > button {
           &,
           &:hover,
           &:focus {

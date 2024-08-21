@@ -13,7 +13,7 @@ module.exports = class SurfaceScriptModule extends ScriptModule
 
   endNotes: ->
     notes = []
-    notes.push({channel:'level-highlight-sprites', event: {thangIDs: []}}) if @noteGroup.surface.highlight?
+    notes.push({channel:'sprite:highlight-sprites', event: {thangIDs: []}}) if @noteGroup.surface.highlight?
     notes.push(@surfaceCameraNote(true)) if @noteGroup.surface.focus?
     notes.push(@surfaceLockSelectNote()) if @noteGroup.surface.lockSelect?
     return notes
@@ -30,16 +30,15 @@ module.exports = class SurfaceScriptModule extends ScriptModule
     e.pos = focus.target if _.isPlainObject focus.target
     e.thangID = focus.target if _.isString focus.target
     e.zoom = focus.zoom or 2.0  # TODO: test only doing this if e.pos, e.thangID, or focus.zoom?
-    e.zoom *= 2 if e.zoom  # On 2014-03-16, we doubled the canvas width/height, so now we have a legacy zoom multipler.
     e.duration = if focus.duration? then focus.duration else 1500
     e.duration = 0 if instant
     e.bounds = focus.bounds if focus.bounds?
-    return { channel: 'level-set-surface-camera', event: e }
+    return { channel: 'camera:set-camera', event: e }
 
   surfaceHighlightNote: ->
     highlight = @noteGroup.surface.highlight
     note =
-      channel: 'level-highlight-sprites'
+      channel: 'sprite:highlight-sprites'
       event:
         thangIDs: highlight.targets
         delay: highlight.delay
@@ -47,4 +46,4 @@ module.exports = class SurfaceScriptModule extends ScriptModule
     return note
 
   surfaceLockSelectNote: ->
-    return { channel: 'level-lock-select', event: {lock: @noteGroup.surface.lockSelect} }
+    return { channel: 'level:lock-select', event: {lock: @noteGroup.surface.lockSelect} }

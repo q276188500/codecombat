@@ -3,7 +3,7 @@
 # Other Systems might be things like Attraction, EdgeBounce, EdgeWrap, and non-physics ones, too, like Rendering, Animation, ...
 
 module.exports = class System
-  @className: "System"
+  @className: 'System'
   constructor: (@world, config) ->
     # Unlike with Component, we don't automatically copy all our properties onto the World.
     # Subclasses can copy select properties here if they like.
@@ -46,7 +46,8 @@ module.exports = class System
   hashString: (s) ->
     return @hashes[s] if s of @hashes
     hash = 0
-    hash = hash * 31 + s.charCodeAt(i) for i in [0 ... Math.min(s.length, 100)]
+    for i in [0 ... Math.min(s.length, 100)]
+      hash = hash * 31 + s.charCodeAt(i)
     hash = @hashes[s] = hash % 3.141592653589793
     hash
 

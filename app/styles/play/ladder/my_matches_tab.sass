@@ -26,4 +26,29 @@
     fill: #555555
     shape-rendering: crispEdges
     
-    
+  tr.fresh
+    background-color: #39F
+  tr.stale
+    opacity: 0.5
+  tr.win .state-cell
+    color: #172
+  tr.loss .state-cell
+    color: #712
+
+  td
+    padding: 1px 2px
+
+  .name-cell
+    max-width: 130px
+    white-space: nowrap
+    overflow: hidden
+    text-overflow: ellipsis
+
+  .code-language-cell
+    padding: 0 10px
+    background: transparent url(/images/common/code_languages/javascript_icon.png) no-repeat center center
+    height: 16px
+
+  .load-more-matches
+    float: right
+    margin-right: 20px

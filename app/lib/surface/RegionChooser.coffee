@@ -1,5 +1,6 @@
-CocoClass = require 'lib/CocoClass'
+CocoClass = require 'core/CocoClass'
 Camera = require './Camera'
+createjs = require 'lib/createjs-parts'
 
 module.exports = class RegionChooser extends CocoClass
   constructor: (@options) ->
@@ -16,24 +17,24 @@ module.exports = class RegionChooser extends CocoClass
 
   onMouseDown: (e) =>
     return unless key.shift
-    @firstPoint = @options.camera.canvasToWorld {x: e.stageX, y: e.stageY}
+    @firstPoint = @options.camera.screenToWorld {x: e.stageX, y: e.stageY}
     @options.camera.dragDisabled = true
 
   onMouseMove: (e) =>
     return unless @firstPoint
-    @secondPoint = @options.camera.canvasToWorld {x: e.stageX, y: e.stageY}
-    @restrictRegion() if @options.restrictRatio
+    @secondPoint = @options.camera.screenToWorld {x: e.stageX, y: e.stageY}
+    @restrictRegion() if @options.restrictRatio or key.alt
     @updateShape()
 
   onMouseUp: (e) =>
     return unless @firstPoint
-    Backbone.Mediator.publish 'choose-region', points: [@firstPoint, @secondPoint]
+    Backbone.Mediator.publish 'surface:choose-region', points: [@firstPoint, @secondPoint]
     @firstPoint = null
     @secondPoint = null
     @options.camera.dragDisabled = false
 
   restrictRegion: ->
-    RATIO = 1.56876  # 1848 / 1178
+    RATIO = 1.56876  # 924 / 589
     rect = @options.camera.normalizeBounds([@firstPoint, @secondPoint])
     currentRatio = rect.width / rect.height
     if currentRatio > RATIO
@@ -65,4 +66,5 @@ module.exports = class RegionChooser extends CocoClass
     @shape.mouseEnabled = false
     @shape.graphics.beginFill('#fedcba').drawRect rect.x, rect.y, rect.width, rect.height
     @shape.graphics.endFill()
+    @shape.skipScaling = true
     @options.surfaceLayer.addChild(@shape)
